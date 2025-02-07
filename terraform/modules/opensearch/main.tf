@@ -8,7 +8,7 @@ resource "aws_opensearchserverless_access_policy" "this" {
         {
           ResourceType = "index"
           Resource = [
-            "index/${each.value.name}/*"
+            "index/${each.value.name}/${lower(each.value.department)}"
           ]
           Permission = [
             "aoss:CreateIndex",
@@ -110,7 +110,7 @@ resource "time_sleep" "wait_before_index_creation" {
 
 resource "opensearch_index" "this" {
   for_each                      = aws_opensearchserverless_collection.this
-  name                          = lower("${var.index_name_prefix}-${each.value.tags["Department"]}")
+  name                          = lower(each.value.tags["Department"])
   number_of_shards              = "2"
   number_of_replicas            = "0"
   index_knn                     = true
@@ -120,7 +120,7 @@ resource "opensearch_index" "this" {
       "properties": {
         "bedrock-knowledge-base-default-vector": {
           "type": "knn_vector",
-          "dimension": 1536,
+          "dimension": 1024,
           "method": {
             "name": "hnsw",
             "engine": "faiss",

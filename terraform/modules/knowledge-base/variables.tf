@@ -22,7 +22,7 @@ variable "bedrock_role_name" {
 variable "kb_model_arn" {
   type        = string
   description = "The ARN of the Knowledge Base model"
-  default     = "arn:aws:bedrock:ap-northeast-1::foundation-model/cohere.embed-multilingual-v3.0"
+  default     = "arn:aws:bedrock:ap-northeast-1::foundation-model/cohere.embed-english-v3"
 }
 
 # These variables are still needed for backward compatibility
