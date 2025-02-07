@@ -1,14 +1,17 @@
 output "collection_arns" {
-  description = "Map of collection names to their ARNs"
+  description = "ARNs of the OpenSearch collections"
   value       = { for k, v in aws_opensearchserverless_collection.this : k => v.arn }
 }
 
 output "index_names" {
-  description = "Map of collection names to their index names"
-  value       = { for k, v in opensearch_index.this : k => v.name }
+  description = "Names of the OpenSearch indices"
+  value = {
+    "bedrock-flow-hr" = opensearch_index.hr.name
+    "bedrock-flow-finance" = opensearch_index.finance.name
+  }
 }
 
 output "collection_endpoints" {
-  description = "Map of collection names to their endpoints"
+  description = "Endpoints of the OpenSearch collections"
   value       = { for k, v in aws_opensearchserverless_collection.this : k => v.collection_endpoint }
 }

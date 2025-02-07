@@ -73,3 +73,40 @@ resource "aws_iam_role_policy" "bedrock_kb_model" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "opensearch_access" {
+  for_each = aws_iam_role.bedrock_kb
+  
+  name = "OpenSearchAccessPolicy_${each.key}"
+  role = each.value.name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "aoss:APIAccessAll",
+          "aoss:ListCollections",
+          "aoss:CreateCollection",
+          "aoss:DeleteCollection",
+          "aoss:UpdateCollection",
+          "aoss:GetCollection",
+          "aoss:CreateSecurityPolicy",
+          "aoss:CreateAccessPolicy",
+          "aoss:BatchGetCollection"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "aoss:*"
+        ]
+        Resource = [
+          "arn:aws:aoss:${local.region}:${local.account_id}:collection/*"
+        ]
+      }
+    ]
+  })
+}

@@ -6,9 +6,21 @@ resource "aws_opensearchserverless_access_policy" "this" {
     {
       Rules = [
         {
+          ResourceType = "collection"
+          Resource = [
+            "collection/${each.value.name}"
+          ]
+          Permission = [
+            "aoss:CreateCollectionItems",
+            "aoss:DeleteCollectionItems",
+            "aoss:DescribeCollectionItems",
+            "aoss:UpdateCollectionItems"
+          ]
+        },
+        {
           ResourceType = "index"
           Resource = [
-            "index/${each.value.name}/${lower(each.value.department)}"
+            "index/${each.value.name}/*"
           ]
           Permission = [
             "aoss:CreateIndex",
@@ -17,17 +29,6 @@ resource "aws_opensearchserverless_access_policy" "this" {
             "aoss:ReadDocument",
             "aoss:UpdateIndex",
             "aoss:WriteDocument"
-          ]
-        },
-        {
-          ResourceType = "collection"
-          Resource = [
-            "collection/${each.value.name}"
-          ]
-          Permission = [
-            "aoss:CreateCollectionItems",
-            "aoss:DescribeCollectionItems",
-            "aoss:UpdateCollectionItems"
           ]
         }
       ],
@@ -98,19 +99,66 @@ resource "aws_opensearchserverless_collection" "this" {
   ]
 }
 
+resource "time_sleep" "wait_before_index_creation" {
+  depends_on      = [aws_opensearchserverless_collection.this]
+  create_duration = "120s"
+}
+
+# 首先定義所有需要的 provider 配置
 provider "opensearch" {
-  url         = values(aws_opensearchserverless_collection.this)[0].collection_endpoint
+  alias       = "hr"
+  url         = aws_opensearchserverless_collection.this["bedrock-flow-hr"].collection_endpoint
   healthcheck = false
 }
 
-resource "time_sleep" "wait_before_index_creation" {
-  depends_on      = [aws_opensearchserverless_collection.this]
-  create_duration = "60s"
+provider "opensearch" {
+  alias       = "finance"
+  url         = aws_opensearchserverless_collection.this["bedrock-flow-finance"].collection_endpoint
+  healthcheck = false
 }
 
-resource "opensearch_index" "this" {
-  for_each                      = aws_opensearchserverless_collection.this
-  name                          = lower(each.value.tags["Department"])
+# 然後在索引資源中使用對應的 provider
+resource "opensearch_index" "hr" {
+  provider                      = opensearch.hr
+  name                          = lower("${var.index_name_prefix}-HR")
+  number_of_shards              = "2"
+  number_of_replicas            = "0"
+  index_knn                     = true
+  index_knn_algo_param_ef_search = "512"
+  mappings                      = <<-EOF
+    {
+      "properties": {
+        "bedrock-knowledge-base-default-vector": {
+          "type": "knn_vector",
+          "dimension": 1024,
+          "method": {
+            "name": "hnsw",
+            "engine": "faiss",
+            "parameters": {
+              "m": 16,
+              "ef_construction": 512
+            },
+            "space_type": "l2"
+          }
+        },
+        "AMAZON_BEDROCK_METADATA": {
+          "type": "text",
+          "index": "false"
+        },
+        "AMAZON_BEDROCK_TEXT_CHUNK": {
+          "type": "text",
+          "index": "true"
+        }
+      }
+    }
+  EOF
+  force_destroy                 = true
+  depends_on                    = [time_sleep.wait_before_index_creation]
+}
+
+resource "opensearch_index" "finance" {
+  provider                      = opensearch.finance
+  name                          = lower("${var.index_name_prefix}-Finance")
   number_of_shards              = "2"
   number_of_replicas            = "0"
   index_knn                     = true
@@ -147,6 +195,6 @@ resource "opensearch_index" "this" {
 }
 
 resource "time_sleep" "wait_after_index_creation" {
-  depends_on      = [opensearch_index.this]
+  depends_on      = [opensearch_index.hr, opensearch_index.finance]
   create_duration = "30s"
 }
