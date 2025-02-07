@@ -9,9 +9,6 @@ A chat application built with AWS Bedrock and Chainlit, providing an interactive
 - Department-specific knowledge bases (HR and Finance)
 - Vector search capabilities using OpenSearch Serverless
 - Infrastructure as Code using Terraform
-- Secure data storage with encrypted S3 buckets
-- Fine-grained IAM permission controls
-- Error handling and graceful fallbacks
 
 ## 🛠️ Technologies
 
@@ -57,10 +54,10 @@ terraform plan
 terraform apply
 ```
 
-4. Create a `.env` file in the root directory with the following variables:
+4. Create a `.env` file in the `src/aws_bedrock_chat` directory with the following variables:
 ```env
-AWS_REGION=<your-aws-region>
-FLOW_ALIAS_ARN=<your-bedrock-flow-alias-arn>
+FLOW_ID=<your-bedrock-flow-id>
+FLOW_ALIAS_ID=<your-bedrock-flow-alias-id>
 ```
 
 5. Run the application:
@@ -75,6 +72,7 @@ aws-bedrock-chat/
 ├── src/
 │   └── aws_bedrock_chat/
 │       ├── app.py                 # Main application entry point
+│       ├── .env                         # Environment variables (not in repo)
 ├── terraform/
 │   ├── modules/
 │   │   ├── bedrock-agent/        # Bedrock agent configuration
@@ -85,7 +83,6 @@ aws-bedrock-chat/
 │   ├── main.tf                  # Main Terraform configuration
 │   ├── variables.tf             # Terraform variables
 │   └── providers.tf             # Provider configuration
-├── .env                         # Environment variables (not in repo)
 ├── .gitignore
 ├── README.md
 ├── chainlit.md                  # Chainlit welcome screen
@@ -104,14 +101,7 @@ Once the application is running, you can:
 
 The application uses the following environment variables:
 - `AWS_REGION`: Your AWS region
-- `FLOW_ALIAS_ARN`: The ARN of your Bedrock Flow alias
+- `FLOW_ID`: Your AWS Bedrock Flow ID
+- `FLOW_ALIAS_ID`: Your AWS Bedrock Flow Alias ID
 
 Infrastructure configuration is managed through Terraform variables in the `terraform/variables.tf` file.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 👥 Authors
-
-- Rich (rich.liu0912@hotmail.com)
