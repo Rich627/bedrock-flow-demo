@@ -1,4 +1,4 @@
-# AWS Bedrock Chat
+# AWS Bedrock Chat Application
 
 A chat application built with AWS Bedrock and Chainlit, providing an interactive conversational interface powered by AWS's language models with department-specific knowledge bases.
 
@@ -75,8 +75,6 @@ aws-bedrock-chat/
 ├── src/
 │   └── aws_bedrock_chat/
 │       ├── app.py                 # Main application entry point
-│       └── services/
-│           └── bedrock_service.py # AWS Bedrock service integration
 ├── terraform/
 │   ├── modules/
 │   │   ├── bedrock-agent/        # Bedrock agent configuration
