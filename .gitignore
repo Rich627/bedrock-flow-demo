@@ -233,5 +233,4 @@ pyrightconfig.json
 .terraform.lock.hcl
 
 # PDF files in terraform/pdfs
-terraform/pdfs/hr/*.pdf
-terraform/pdfs/finance/*.pdf
+terraform/pdfs/*
