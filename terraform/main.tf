@@ -1,4 +1,11 @@
-# S3 buckets for HR and Finance departments
+##############################
+# Main Terraform Configuration
+##############################
+
+#################
+# S3 Module
+# Creates encrypted S3 buckets for each department's knowledge base
+#################
 module "pds_buckets" {
   source = "./modules/s3"
   buckets = [
@@ -13,7 +20,10 @@ module "pds_buckets" {
   ]
 }
 
-# Knowledge base resource role
+#################
+# IAM Module
+# Sets up IAM roles and policies for Bedrock and department access
+#################
 module "sample_iam" {
   source = "./modules/iam"
   departments = [
@@ -29,6 +39,10 @@ module "sample_iam" {
   kb_model_arn = data.aws_bedrock_foundation_model.kb.model_arn
 }
 
+#################
+# OpenSearch Module
+# Creates OpenSearch collections for vector search capabilities
+#################
 module "opensearch" {
   source = "./modules/opensearch"
   collections = [
@@ -44,6 +58,10 @@ module "opensearch" {
   bedrock_role_arn = module.sample_iam.bedrock_role_arns["HR"]
 }
 
+#################
+# Knowledge Base Module
+# Sets up Bedrock knowledge bases with OpenSearch and S3 integration
+#################
 module "knowledge-base" {
   source = "./modules/knowledge-base"
   knowledge_bases = [
@@ -65,7 +83,8 @@ module "knowledge-base" {
   bedrock_role_arn  = module.sample_iam.bedrock_role_arns["HR"]
   bedrock_role_name = module.sample_iam.bedrock_role_names["HR"]
   kb_model_arn      = data.aws_bedrock_foundation_model.kb.model_arn
-  depends_on        = [module.opensearch]
+  
+  depends_on = [module.opensearch]
 }
 
 module "bedrock-agent" {

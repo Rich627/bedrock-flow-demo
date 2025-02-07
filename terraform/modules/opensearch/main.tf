@@ -1,3 +1,12 @@
+###############################
+# OpenSearch Serverless Module
+# Configures OpenSearch serverless collections and policies
+###############################
+
+#################
+# Access Policy
+# Configures data access permissions for collections
+#################
 resource "aws_opensearchserverless_access_policy" "this" {
   for_each = { for collection in var.collections : collection.name => collection }
   name = each.value.name
@@ -41,6 +50,10 @@ resource "aws_opensearchserverless_access_policy" "this" {
   ])
 }
 
+#################
+# Security Policy - Encryption
+# Sets up encryption configuration for collections
+#################
 resource "aws_opensearchserverless_security_policy" "encryption" {
   for_each = { for collection in var.collections : collection.name => collection }
   name = each.value.name
@@ -58,6 +71,10 @@ resource "aws_opensearchserverless_security_policy" "encryption" {
   })
 }
 
+#################
+# Security Policy - Network
+# Configures network access settings for collections
+#################
 resource "aws_opensearchserverless_security_policy" "network" {
   for_each = { for collection in var.collections : collection.name => collection }
   name = each.value.name
@@ -83,6 +100,10 @@ resource "aws_opensearchserverless_security_policy" "network" {
   ])
 }
 
+#################
+# Collection
+# Creates OpenSearch serverless collections for vector search
+#################
 resource "aws_opensearchserverless_collection" "this" {
   for_each = { for collection in var.collections : collection.name => collection }
   name = each.value.name
@@ -99,12 +120,19 @@ resource "aws_opensearchserverless_collection" "this" {
   ]
 }
 
+#################
+# Time Delay
+# Ensures collection is fully created before index creation
+#################
 resource "time_sleep" "wait_before_index_creation" {
   depends_on      = [aws_opensearchserverless_collection.this]
-  create_duration = "120s"
+  create_duration = "180s"
 }
 
-# 首先定義所有需要的 provider 配置
+#################
+# HR Index
+# Creates and configures the HR department search index
+#################
 provider "opensearch" {
   alias       = "hr"
   url         = aws_opensearchserverless_collection.this["bedrock-flow-hr"].collection_endpoint
@@ -116,8 +144,6 @@ provider "opensearch" {
   url         = aws_opensearchserverless_collection.this["bedrock-flow-finance"].collection_endpoint
   healthcheck = false
 }
-
-# 然後在索引資源中使用對應的 provider
 resource "opensearch_index" "hr" {
   provider                      = opensearch.hr
   name                          = lower("${var.index_name_prefix}-HR")
@@ -154,8 +180,15 @@ resource "opensearch_index" "hr" {
   EOF
   force_destroy                 = true
   depends_on                    = [time_sleep.wait_before_index_creation]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
+#################
+# Finance Index
+# Creates and configures the Finance department search index
+#################
 resource "opensearch_index" "finance" {
   provider                      = opensearch.finance
   name                          = lower("${var.index_name_prefix}-Finance")
@@ -192,9 +225,16 @@ resource "opensearch_index" "finance" {
   EOF
   force_destroy                 = true
   depends_on                    = [time_sleep.wait_before_index_creation]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
+#################
+# Final Time Delay
+# Ensures indexes are fully created before proceeding
+#################
 resource "time_sleep" "wait_after_index_creation" {
   depends_on      = [opensearch_index.hr, opensearch_index.finance]
-  create_duration = "30s"
+  create_duration = "60s"
 }

@@ -1,11 +1,19 @@
+##############################
+# Bedrock Agent Configuration
+##############################
+
+#################
+# Agent Creation
+# Creates Bedrock Agents with Knowledge Base integration
+#################
 resource "awscc_bedrock_agent" "this" {
   for_each = { for agent in var.agents : agent.name => agent }
   
   agent_name              = each.value.name
-  description             = "Agent for ${each.value.department} department"
+  description            = "Agent for ${each.value.department} department"
   agent_resource_role_arn = aws_iam_role.bedrock_agent[each.key].arn
-  foundation_model        = data.aws_bedrock_foundation_model.agent.model_id
-  instruction             = file("${path.module}/instruction.txt")
+  foundation_model       = data.aws_bedrock_foundation_model.agent.model_id
+  instruction           = file("${path.module}/instruction.txt")
   
   knowledge_bases = [{
     description          = "${each.value.department} knowledge base"
@@ -14,14 +22,17 @@ resource "awscc_bedrock_agent" "this" {
   }]
   
   idle_session_ttl_in_seconds = 600
-  auto_prepare                = true
+  auto_prepare               = true
 
   tags = {
     Department = each.value.department
   }
 }
 
-# Agent resource role
+#################
+# Agent IAM Role
+# Creates IAM roles for Bedrock Agents
+#################
 resource "aws_iam_role" "bedrock_agent" {
   for_each = { for agent in var.agents : agent.name => agent }
   
@@ -48,10 +59,15 @@ resource "aws_iam_role" "bedrock_agent" {
   })
 }
 
+#################
+# Agent Policies
+# Configures permissions for Bedrock Agents
+#################
 resource "aws_iam_role_policy" "bedrock_agent_model" {
   for_each = aws_iam_role.bedrock_agent
-  name = "AmazonBedrockAgentBedrockFoundationModelPolicy_${each.key}"
-  role = each.value.name
+  name     = "AmazonBedrockAgentBedrockFoundationModelPolicy_${each.key}"
+  role     = each.value.name
+  
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -66,8 +82,9 @@ resource "aws_iam_role_policy" "bedrock_agent_model" {
 
 resource "aws_iam_role_policy" "bedrock_agent_kb" {
   for_each = { for agent in var.agents : agent.name => agent }
-  name = "AmazonBedrockAgentBedrockKnowledgeBasePolicy_${each.key}"
-  role = aws_iam_role.bedrock_agent[each.key].name
+  name     = "AmazonBedrockAgentBedrockKnowledgeBasePolicy_${each.key}"
+  role     = aws_iam_role.bedrock_agent[each.key].name
+  
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

@@ -1,7 +1,16 @@
+##############################
+# Knowledge Base Configuration
+##############################
+
+#################
+# IAM Policy
+# Configures OpenSearch access for Knowledge Base
+#################
 resource "aws_iam_role_policy" "bedrock_kb_policy" {
   for_each = { for kb in var.knowledge_bases : kb.name => kb }
   name     = "AmazonBedrockOSSPolicyForKnowledgeBase_${each.value.name}"
   role     = var.bedrock_role_name
+  
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -51,6 +60,10 @@ resource "aws_bedrockagent_knowledge_base" "this" {
   depends_on = [time_sleep.iam_consistency_delay]
 }
 
+#################
+# Data Source Configuration
+# Sets up S3 data sources for Knowledge Bases
+#################
 resource "aws_bedrockagent_data_source" "this" {
   for_each         = { for kb in var.knowledge_bases : kb.name => kb }
   knowledge_base_id = aws_bedrockagent_knowledge_base.this[each.key].id
